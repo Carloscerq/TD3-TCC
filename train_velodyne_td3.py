@@ -9,7 +9,7 @@ from numpy import inf
 from torch.utils.tensorboard import SummaryWriter
 
 from replay_buffer import ReplayBuffer
-from env import GazeboEnv
+from velodyne_env import GazeboEnv
 
 
 def evaluate(network, epoch, eval_episodes=10):
@@ -21,7 +21,7 @@ def evaluate(network, epoch, eval_episodes=10):
         done = False
         while not done and count < 501:
             action = network.get_action(np.array(state))
-            a_in = [(action[0] + 1) / 2, action[1]]
+            a_in = [(action[0]+1) / 2, action[1]]
             state, reward, done, _ = env.step(a_in)
             avg_reward += reward
             count += 1
@@ -90,13 +90,11 @@ class Critic(nn.Module):
 # TD3 network
 class TD3(object):
     def __init__(self, state_dim, action_dim, max_action):
-        # Initialize the Actor network
         self.actor = Actor(state_dim, action_dim).to(device)
         self.actor_target = Actor(state_dim, action_dim).to(device)
         self.actor_target.load_state_dict(self.actor.state_dict())
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters())
 
-        # Initialize the Critic networks
         self.critic = Critic(state_dim, action_dim).to(device)
         self.critic_target = Critic(state_dim, action_dim).to(device)
         self.critic_target.load_state_dict(self.critic.state_dict())
@@ -107,11 +105,9 @@ class TD3(object):
         self.iter_count = 0
 
     def get_action(self, state):
-        # Function to get the action from the actor
         state = torch.Tensor(state.reshape(1, -1)).to(device)
         return self.actor(state).cpu().data.numpy().flatten()
 
-    # training cycle
     def train(
         self,
         replay_buffer,
@@ -119,7 +115,7 @@ class TD3(object):
         batch_size=100,
         discount=1,
         tau=0.005,
-        policy_noise=0.2,  # discount=0.99
+        policy_noise=0.2,  
         noise_clip=0.5,
         policy_freq=2,
     ):
@@ -127,7 +123,6 @@ class TD3(object):
         max_Q = -inf
         av_loss = 0
         for it in range(iterations):
-            # sample a batch from the replay buffer
             (
                 batch_states,
                 batch_actions,
@@ -141,31 +136,22 @@ class TD3(object):
             reward = torch.Tensor(batch_rewards).to(device)
             done = torch.Tensor(batch_dones).to(device)
 
-            # Obtain the estimated action from the next state by using the actor-target
             next_action = self.actor_target(next_state)
 
-            # Add noise to the action
             noise = torch.Tensor(batch_actions).data.normal_(0, policy_noise).to(device)
             noise = noise.clamp(-noise_clip, noise_clip)
             next_action = (next_action + noise).clamp(-self.max_action, self.max_action)
 
-            # Calculate the Q values from the critic-target network for the next state-action pair
             target_Q1, target_Q2 = self.critic_target(next_state, next_action)
 
-            # Select the minimal Q value from the 2 calculated values
             target_Q = torch.min(target_Q1, target_Q2)
             av_Q += torch.mean(target_Q)
             max_Q = max(max_Q, torch.max(target_Q))
-            # Calculate the final Q value from the target network parameters by using Bellman equation
             target_Q = reward + ((1 - done) * discount * target_Q).detach()
 
-            # Get the Q values of the basis networks with the current parameters
             current_Q1, current_Q2 = self.critic(state, action)
-
-            # Calculate the loss between the current Q value and the target Q value
             loss = F.mse_loss(current_Q1, target_Q) + F.mse_loss(current_Q2, target_Q)
 
-            # Perform the gradient descent
             self.critic_optimizer.zero_grad()
             loss.backward()
             self.critic_optimizer.step()
@@ -249,7 +235,7 @@ if save_model and not os.path.exists("./pytorch_models"):
 # Create the training environment
 environment_dim = 20
 robot_dim = 4
-env = GazeboEnv("TCC_launcher.launch", environment_dim)
+env = GazeboEnv("multi_robot_scenario.launch", environment_dim)
 time.sleep(5)
 torch.manual_seed(seed)
 np.random.seed(seed)

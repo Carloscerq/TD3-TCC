@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from env import GazeboEnv
+from velodyne_env import GazeboEnv
 
 
 class Actor(nn.Module):
@@ -24,15 +24,19 @@ class Actor(nn.Module):
         return a
 
 
+# TD3 network
 class TD3(object):
     def __init__(self, state_dim, action_dim):
+        # Initialize the Actor network
         self.actor = Actor(state_dim, action_dim).to(device)
 
     def get_action(self, state):
+        # Function to get the action from the actor
         state = torch.Tensor(state.reshape(1, -1)).to(device)
         return self.actor(state).cpu().data.numpy().flatten()
 
     def load(self, filename, directory):
+        # Function to load network parameters
         self.actor.load_state_dict(
             torch.load("%s/%s_actor.pth" % (directory, filename))
         )
@@ -48,18 +52,20 @@ file_name = "TD3_velodyne"  # name of the file to load the policy from
 # Create the testing environment
 environment_dim = 20
 robot_dim = 4
-env = GazeboEnv("TCC_launcher.launch", environment_dim)
+env = GazeboEnv("multi_robot_scenario.launch", environment_dim)
 time.sleep(5)
 torch.manual_seed(seed)
 np.random.seed(seed)
 state_dim = environment_dim + robot_dim
 action_dim = 2
+flag = True
 
 # Create the network
 network = TD3(state_dim, action_dim)
 try:
     network.load(file_name, "./pytorch_models")
 except:
+    flag = False
     raise ValueError("Could not load the stored model parameters")
 
 done = False
@@ -67,7 +73,7 @@ episode_timesteps = 0
 state = env.reset()
 
 # Begin the testing loop
-while True:
+while flag:
     action = network.get_action(np.array(state))
 
     # Update action to fall in range [0,1] for linear velocity and [-1,1] for angular velocity
@@ -83,3 +89,4 @@ while True:
     else:
         state = next_state
         episode_timesteps += 1
+print("Failed!")
