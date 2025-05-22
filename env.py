@@ -26,20 +26,10 @@ TIME_DELTA = 0.1
 def check_pos(x, y):
     goal_ok = True
 
-    if x > 9.5 or x < -9.5:
+    if x > 8.5 or x < 4.5:
         goal_ok = False
-    if y > 9.5 or y < -9.5:
+    if y > 5.5 or y < 2.5:
         goal_ok = False    
-    if 1.0 < y < 5.5 and  0.5 < x < 6.5:
-        goal_ok = False
-    if 1.0 < y < 5.0 and -6.5 < x < -1.5:
-        goal_ok = False
-    if 6.5 < y < 8.5 and 6.5 < x < 8.5:
-        goal_ok = False
-    if -6.5 < y < -2.5 and  1.0 < x < 5.0:
-        goal_ok = False
-    if -6.5 < y < -2 and -6.5 < x < -0.5:
-       goal_ok = False
 
     return goal_ok
 
@@ -61,8 +51,8 @@ class GazeboEnv:
 
         self.set_self_state = ModelState()
         self.set_self_state.model_name = "husky"
-        self.set_self_state.pose.position.x = 0.0
-        self.set_self_state.pose.position.y = 0.0
+        self.set_self_state.pose.position.x = 6.5
+        self.set_self_state.pose.position.y = 4.0
         self.set_self_state.pose.position.z = 0.0
         self.set_self_state.pose.orientation.x = 0.0
         self.set_self_state.pose.orientation.y = 0.0
@@ -216,6 +206,7 @@ class GazeboEnv:
         self.set_odom_pose_service(pose_msg)
     def reset(self):
 
+        print("here")
         # Resets the state of the environment and returns an initial observation.
         rospy.wait_for_service("/gazebo/reset_world")
         try:
@@ -232,9 +223,11 @@ class GazeboEnv:
         y = 0
         position_ok = False
         while not position_ok:
-            x = np.random.uniform(-10,10)
-            y = np.random.uniform(-10,10)
+            x = np.random.uniform(4.5, 8.5)
+            y = np.random.uniform(2.5, 5.5)
             position_ok = check_pos(x, y)
+
+        print(f"Position: {x}, {y}")
         object_state.pose.position.x = x
         object_state.pose.position.y = y
         # object_state.pose.position.z = 0.
@@ -306,17 +299,19 @@ class GazeboEnv:
 
     def change_goal(self,x,y):
         # Place a new goal and check if its location is not on one of the obstacles
-        if self.upper < 10:
+        if self.upper < 5.5:
             self.upper += 0.004
-        if self.lower > -10:
+        if self.lower > 4.5:
             self.lower -= 0.004
 
         goal_ok = False
 
         while not goal_ok:
-            self.goal_x = random.uniform(self.upper, self.lower) - x
-            self.goal_y = random.uniform(self.upper, self.lower) - y
+            self.goal_x = random.uniform(self.upper, self.lower)
+            self.goal_y = random.uniform(self.upper, self.lower)
             goal_ok = check_pos(self.goal_x, self.goal_y)
+
+        print(f"Goal: {self.goal_x}, {self.goal_y}")
 
     def publish_markers(self, action):
         # Publish visual data in Rviz

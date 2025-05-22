@@ -60,27 +60,14 @@ TIME_DELTA = 0.1
 #     return goal_ok
 def check_pos(x, y):
     goal_ok = True
-    if x > 8.5 or x < -8.5:
+
+    if x > 8.5 or x < 4.5:
         goal_ok = False
-    if y > 8.5 or y < -8.5:
+    if y > 5.5 or y < 2.5:
         goal_ok = False    
-    if 0.5 < y < 6.5 and  0.3 < x < 7:
-        goal_ok = False
-    if 0.5 < y < 6.5 and -7 < x < -1.0:
-        goal_ok = False
-    if 5.5 < y < 9.0 and 5.5 < x < 8.5:
-        goal_ok = False
-    if -7.2 < y < -2.0 and 1.0 < x < 5.0:
-        goal_ok = False
-    if -7.5 < y < -2 and -7.2 < x < -0.2:
-        goal_ok = False
-    if 7.0 < y and -3 < x < 2.0:
-        goal_ok = False
-    if y < -7 and x > 6.0:
-        goal_ok = False
-    if y < -6.5 and x < -6.5:
-        goal_ok = False
+
     return goal_ok
+
 
 #MinorMinor World
 # def check_pos(x, y):
@@ -118,8 +105,8 @@ class GazeboEnv:
 
         self.set_self_state = ModelState()
         self.set_self_state.model_name = "husky"
-        self.set_self_state.pose.position.x = 0.0
-        self.set_self_state.pose.position.y = 0.0
+        self.set_self_state.pose.position.x = 6.5
+        self.set_self_state.pose.position.y = 4.0
         self.set_self_state.pose.position.z = 0.0
         self.set_self_state.pose.orientation.x = 1.0
         self.set_self_state.pose.orientation.y = 0.0
@@ -311,8 +298,8 @@ class GazeboEnv:
         y = 0
         position_ok = False
         while not position_ok:
-            x = np.random.uniform(-9, 9)
-            y = np.random.uniform(-9, 9)
+            x = np.random.uniform(4.5, 8.5)
+            y = np.random.uniform(2.5, 5.5)
             position_ok = check_pos(x, y)
 
         object_state.pose.position.x = x 
@@ -397,8 +384,8 @@ class GazeboEnv:
         goal_ok = False
 
         while not goal_ok:
-            self.goal_x = random.uniform(self.upper, self.lower) + x
-            self.goal_y = random.uniform(self.upper, self.lower) + y
+            self.goal_x = random.uniform(-8.5, 8.5) + x
+            self.goal_y = random.uniform(-5.5, 5.5) + y
             goal_ok = check_pos(self.goal_x, self.goal_y)
 
     def random_box(self):

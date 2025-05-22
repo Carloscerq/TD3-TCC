@@ -205,10 +205,10 @@ class TD3(object):
 # Set the parameters for the implementation
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # cuda or cpu
 seed = 0  # Random seed number
-eval_freq = 5e3  # After how many steps to perform the evaluation
-max_ep = 500  # maximum number of steps per episode
+eval_freq = 5e2  # After how many steps to perform the evaluation
+max_ep = 250  # maximum number of steps per episode
 eval_ep = 10  # number of episodes for evaluation
-max_timesteps = 5e6  # Maximum number of steps to perform
+max_timesteps = 5e4  # Maximum number of steps to perform
 expl_noise = 1  # Initial exploration noise starting value in range [expl_min ... 1]
 expl_decay_steps = (
     500000  # Number of steps over which the initial exploration noise will decay over
@@ -235,7 +235,7 @@ if save_model and not os.path.exists("./pytorch_models"):
 # Create the training environment
 environment_dim = 20
 robot_dim = 4
-env = GazeboEnv("multi_robot_scenario.launch", environment_dim)
+env = GazeboEnv("TCC_launcher.launch", environment_dim)
 time.sleep(5)
 torch.manual_seed(seed)
 np.random.seed(seed)
