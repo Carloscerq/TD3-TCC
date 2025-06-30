@@ -14,6 +14,7 @@ from robot_localization.srv import SetPose
 from geometry_msgs.msg import Twist, Pose, Vector3, Point, PoseWithCovarianceStamped
 import rospkg
 from nav_msgs.msg import Odometry
+from gazebo_msgs.msg import ModelStates
 from sensor_msgs.msg import PointCloud2
 from squaternion import Quaternion
 from std_srvs.srv import Empty
@@ -158,7 +159,7 @@ class GazeboEnv:
             "/velodyne_points", PointCloud2, self.velodyne_callback, queue_size=1
         )
         self.odom = rospy.Subscriber(
-            "/odometry/filtered", Odometry, self.odom_callback, queue_size=1
+            "/odometry/filtered", ModelStates, self.odom_callback, queue_size=1
         )
 
     # Read velodyne pointcloud and turn it into distance data, then select the minimum value for each angle
@@ -179,8 +180,20 @@ class GazeboEnv:
                         self.velodyne_data[j] = min(self.velodyne_data[j], dist)
                         break
 
-    def odom_callback(self, od_data):
-        self.last_odom = od_data
+    def odom_callback(self, msg):
+        robot_name = "husky"
+        index = msg.name.index(robot_name)
+        odom = Odometry()
+        odom.header.stamp = rospy.Time.now()
+        odom.header.frame_id = "odom"         # or "map", depending on your TF tree
+        odom.child_frame_id = "base_link"
+        # Assign pose and twist
+        odom.pose.pose = msg.pose[index]
+        odom.twist.twist = msg.twist[index]
+        # Optionally set covariance (set to small value if you treat this as ground truth)
+        odom.pose.covariance = [0.0]*36
+        odom.twist.covariance = [0.0]*36
+        self.last_odom = odom
 
 
     # Perform an action and read a new state
@@ -298,8 +311,8 @@ class GazeboEnv:
         y = 0
         position_ok = False
         while not position_ok:
-            x = np.random.uniform(4.5, 8.5)
-            y = np.random.uniform(2.5, 5.5)
+            x = np.random.uniform(5.5, 7.5)
+            y = np.random.uniform(3.5, 5.5)
             position_ok = check_pos(x, y)
 
         object_state.pose.position.x = x 
